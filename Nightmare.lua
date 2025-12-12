@@ -5,6 +5,21 @@ local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+-- Configuration
+local DEFAULT_WALKSPEED = 16
+local DEFAULT_JUMPPOWER = 50
+
+-- Remote Event Setup (Requires a RemoteEvent named 'ModActionRemote' in ReplicatedStorage)
+local ModActionRemote = ReplicatedStorage:FindFirstChild("ModActionRemote")
+if not ModActionRemote then
+    -- Create the remote event for demonstration/ease of setup
+    ModActionRemote = Instance.new("RemoteEvent")
+    ModActionRemote.Name = "ModActionRemote"
+    ModActionRemote.Parent = ReplicatedStorage
+    warn("Created placeholder ModActionRemote. Remember to handle this on the server!")
+end
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -353,18 +368,18 @@ overlayToggleCorner.Parent = overlayToggle
 
 local overlayOn = false
 local function setOverlayVisible()
-    analyticsOverlayGui.Visible = overlayOn
+    analyticsOverlayGui.Visible = overlayOn
 end
 overlayToggle.MouseButton1Click:Connect(function()
-    overlayOn = not overlayOn
-    if overlayOn then
-        overlayToggle.Text = "Show Overlay: ON"
-        overlayToggle.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
-    else
-        overlayToggle.Text = "Show Overlay: OFF"
-        overlayToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
-    end
-    setOverlayVisible()
+    overlayOn = not overlayOn
+    if overlayOn then
+        overlayToggle.Text = "Show Overlay: ON"
+        overlayToggle.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
+    else
+        overlayToggle.Text = "Show Overlay: OFF"
+        overlayToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
+    end
+    setOverlayVisible()
 end)
 
 -- FPS/MS/Ping update logic
@@ -374,39 +389,39 @@ local fps = 0
 local ms = 0
 local ping = "..."
 local function getConnectionStatus()
-    -- Simulate connection status: "Good", "Average", "Poor"
-    if type(ping) == "number" then
-        if ping < 70 then return "Good"
-        elseif ping < 120 then return "Average"
-        else return "Poor"
-        end
-    end
-    return "Unknown"
+    -- Simulate connection status: "Good", "Average", "Poor"
+    if type(ping) == "number" then
+        if ping < 70 then return "Good"
+        elseif ping < 120 then return "Average"
+        else return "Poor"
+        end
+    end
+    return "Unknown"
 end
 local function updateAnalytics()
-    analyticsStats.Text = string.format(
-        "FPS: %d\nMS: %.2f\nPing: %s\nPlayers: %d\nConnection: %s",
-        fps, ms, ping, #Players:GetPlayers(), getConnectionStatus()
-    )
-    overlayStats.Text = string.format(
-        "FPS: %d\nMS: %.2f\nPing: %s\nPlayers: %d\nConnection: %s",
-        fps, ms, ping, #Players:GetPlayers(), getConnectionStatus()
-    )
+    analyticsStats.Text = string.format(
+        "FPS: %d\nMS: %.2f\nPing: %s\nPlayers: %d\nConnection: %s",
+        fps, ms, ping, #Players:GetPlayers(), getConnectionStatus()
+    )
+    overlayStats.Text = string.format(
+        "FPS: %d\nMS: %.2f\nPing: %s\nPlayers: %d\nConnection: %s",
+        fps, ms, ping, #Players:GetPlayers(), getConnectionStatus()
+    )
 end
 RunService.RenderStepped:Connect(function(dt)
-    frameCount = frameCount + 1
-    ms = dt * 1000
-    local now = tick()
-    if now - lastUpdate > 1 then
-        fps = frameCount
-        frameCount = 0
-        lastUpdate = now
-        -- Ping (Roblox doesn't expose true ping, so use a placeholder)
-        if player and player:IsDescendantOf(Players) then
-            ping = math.random(40, 120) -- Simulated ping
-        end
-        updateAnalytics()
-    end
+    frameCount = frameCount + 1
+    ms = dt * 1000
+    local now = tick()
+    if now - lastUpdate > 1 then
+        fps = frameCount
+        frameCount = 0
+        lastUpdate = now
+        -- Ping (Roblox doesn't expose true ping, so use a placeholder)
+        if player and player:IsDescendantOf(Players) then
+            ping = math.random(40, 120) -- Simulated ping
+        end
+        updateAnalytics()
+    end
 end)
 
 -- User Reports Panel
@@ -481,40 +496,39 @@ cameraLabel.Parent = cameraViewFrame
 
 -- Leaderboard logic
 local function updateLeaderboard()
-    for _, child in leaderboardScroll:GetChildren() do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-    local players = Players:GetPlayers()
-    for i = 1, #players do
-        local plr = players[i]
-        local button = Instance.new("TextButton")
-        button.Name = plr.Name .. "LeaderboardButton"
-        button.Size = UDim2.new(1, 0, 0, 32)
-        button.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-        button.BackgroundTransparency = 0.45
-        button.BorderSizePixel = 0
-        button.Text = string.format("%d. %s (@%s)", i, plr.DisplayName, plr.Name)
-        button.Font = Enum.Font.Gotham
-        button.TextSize = 14
-        button.TextColor3 = Color3.fromRGB(230, 200, 255)
-        button.LayoutOrder = i
-        button.Parent = leaderboardScroll
+    for _, child in leaderboardScroll:GetChildren() do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    local players = Players:GetPlayers()
+    for i = 1, #players do
+        local plr = players[i]
+        local button = Instance.new("TextButton")
+        button.Name = plr.Name .. "LeaderboardButton"
+        button.Size = UDim2.new(1, 0, 0, 32)
+        button.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
+        button.BackgroundTransparency = 0.45
+        button.BorderSizePixel = 0
+        button.Text = string.format("%d. %s (@%s)", i, plr.DisplayName, plr.Name)
+        button.Font = Enum.Font.Gotham
+        button.TextSize = 14
+        button.TextColor3 = Color3.fromRGB(230, 200, 255)
+        button.LayoutOrder = i
+        button.Parent = leaderboardScroll
 
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 6)
-        corner.Parent = button
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 6)
+        corner.Parent = button
 
-        button.MouseButton1Click:Connect(function()
-            cameraViewFrame.Visible = true
+        button.MouseButton1Click:Connect(function()
+            cameraViewFrame.Visible = true
 			cameraLabel.Text = "Viewing " .. plr.DisplayName .. "'s camera...\n(Menu state: " .. (plr.PlayerGui and plr.PlayerGui:FindFirstChild("👿nightmare client v1👿") and "Open" or "Closed") .. ")"
-            -- In a real system, would request camera feed from server/client
-            -- Fire remote event to request camera view (not implemented here)
-            -- ReplicatedStorage:WaitForChild("RequestCameraViewEvent"):FireServer(plr.UserId)
-        end)
-    end
-    leaderboardScroll.CanvasSize = UDim2.new(0, 0, 0, leaderboardLayout.AbsoluteContentSize.Y + 10)
+            -- In a real system, would request camera feed from server/client
+            -- ModActionRemote:FireServer("RequestCameraView", plr.UserId)
+        end)
+    end
+    leaderboardScroll.CanvasSize = UDim2.new(0, 0, 0, leaderboardLayout.AbsoluteContentSize.Y + 10)
 end
 Players.PlayerAdded:Connect(updateLeaderboard)
 Players.PlayerRemoving:Connect(updateLeaderboard)
@@ -523,62 +537,58 @@ updateLeaderboard()
 -- Categories and mods data
 local categories = {}
 categories["Movement"] = {
-    "Player Speed",
-    "Fly",
-    "Slippery Ground",
-    "Bouncey Ground",
-    "Super Jump",
-    "No Clip",
-    "Gravity Control"
+    "Player Speed",
+    "Fly",
+    "Super Jump",
+    "No Clip",
+    "Gravity Control",
+    "Slippery Ground",
+    "Bouncey Ground"
 }
 categories["Visual"] = {}
 categories["OP"] = {}
 categories["User Reports"] = {}
 categories["Overview / Analytics"] = {
-    "Full User Reports",
-    "Anti Time Out",
-    "Anti Kick"
+    "Full User Reports",
+    "Anti Time Out",
+    "Anti Kick"
 }
 
 local modDescriptions = {}
 local modActions = {}
+local activeMods = {}
 
--- Add descriptions for new mods
+-- Mod Descriptions
 modDescriptions["Full User Reports"] = "Shows detailed reports for all users, including stats and history."
 modDescriptions["Anti Time Out"] = "Prevents you from being timed out due to inactivity."
 modDescriptions["Anti Kick"] = "Attempts to block kick actions from the server."
+modDescriptions["Player Speed"] = "Change your walking/running speed. (Toggle)"
+modDescriptions["Fly"] = "Allows you to fly around the map, and acts as a ragdoll/noclip toggle. (Toggle)"
+modDescriptions["Super Jump"] = "Jump much higher than normal. (Toggle)"
+modDescriptions["No Clip"] = "Walk through walls and objects. (Toggle, Server Interaction Required)"
+modDescriptions["Gravity Control"] = "Change the gravity for your character/the whole workspace. (Toggle, Server Interaction Required)"
+modDescriptions["Slippery Ground"] = "Makes the ground slippery for you. (Toggle, Server Interaction Required)"
+modDescriptions["Bouncey Ground"] = "Makes the ground bounce you up when you touch it. (Toggle, Server Interaction Required)"
 
-modDescriptions["Player Speed"] = "Change your walking/running speed."
-modDescriptions["Fly"] = "Allows you to fly around the map. Opens a persistent fly controls panel."
-modDescriptions["Slippery Ground"] = "Makes the ground slippery for you."
-modDescriptions["Bouncey Ground"] = "Makes the ground bounce you up when you touch it."
-modDescriptions["Super Jump"] = "Jump much higher than normal."
-modDescriptions["No Clip"] = "Walk through walls and objects."
-modDescriptions["Gravity Control"] = "Change the gravity for your character."
-
--- Add basic actions for new mods
-modActions["Full User Reports"] = function()
-    print("[ModMenu700] Full User Reports activated! (Feature: Show all user reports)")
-    -- Placeholder: Add logic to show full user reports here
-end
-modActions["Anti Time Out"] = function()
-    print("[ModMenu700] Anti Time Out activated! (Feature: Prevent timeouts)")
-    -- Placeholder: Add logic to prevent timeouts here
-end
-modActions["Anti Kick"] = function()
-    print("[ModMenu700] Anti Kick activated! (Feature: Prevent kicks)")
-    -- Placeholder: Add logic to prevent kicks here
-end
-
-modActions["Player Speed"] = function()
-    print("[Movement] Player Speed mod activated!")
-    local character = player.Character or player.CharacterAdded:Wait()
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.WalkSpeed = 50
+-- General Mod Toggle Function
+local function toggleMod(modName)
+    activeMods[modName] = not (activeMods[modName] or false)
+    local button = modsScroll:FindFirstChild(modName .. "Button")
+    if button then
+        button.BackgroundColor3 = activeMods[modName] and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(140, 0, 200)
+        button.Text = modName .. (activeMods[modName] and " [ON]" or " [OFF]")
     end
+    return activeMods[modName]
 end
 
--- Persistent Fly Controls GUI
+-- Fly/Ragdoll/Reset System
+local flyConnection = nil
+local bodyVelocity = nil
+local bodyGyro = nil
+local flyOn = false
+local flySpeed = 2
+
+-- Persistent Fly Controls GUI (from your script)
 local flyGui = Instance.new("ScreenGui")
 flyGui.Name = "FlyControlsGui"
 flyGui.ResetOnSpawn = false
@@ -622,7 +632,6 @@ flySpeedLabel.TextColor3 = Color3.fromRGB(230, 200, 255)
 flySpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 flySpeedLabel.Parent = flyFrame
 
--- FLY GUI CLOSE BUTTON
 local flyCloseBtn = Instance.new("TextButton")
 flyCloseBtn.Name = "FlyCloseBtn"
 flyCloseBtn.Size = UDim2.new(0, 28, 0, 24)
@@ -639,15 +648,6 @@ flyCloseBtn.Parent = flyFrame
 local flyCloseCorner = Instance.new("UICorner")
 flyCloseCorner.CornerRadius = UDim.new(0, 8)
 flyCloseCorner.Parent = flyCloseBtn
-
-flyCloseBtn.MouseButton1Click:Connect(function()
-    flyGui.Enabled = false
-    disableFly() -- Stop flying when GUI is closed
-end)
--- END FLY GUI CLOSE BUTTON
-
-local flyOn = false
-local flySpeed = 2
 
 local flyToggleBtn = Instance.new("TextButton")
 flyToggleBtn.Name = "FlyToggleBtn"
@@ -701,86 +701,26 @@ speedDownCorner.CornerRadius = UDim.new(0, 8)
 speedDownCorner.Parent = speedDownBtn
 
 local function updateFlyGui()
-    flyToggleBtn.Text = "Fly: " .. (flyOn and "ON" or "OFF")
-    flyToggleBtn.BackgroundColor3 = flyOn and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(120, 0, 180)
-    flySpeedLabel.Text = "Speed: " .. tostring(flySpeed)
-end
-
-speedUpBtn.MouseButton1Click:Connect(function()
-    flySpeed = math.min(flySpeed + 1, 10)
-    updateFlyGui()
-end)
-speedDownBtn.MouseButton1Click:Connect(function()
-    flySpeed = math.max(flySpeed - 1, 1)
-    updateFlyGui()
-end)
-updateFlyGui()
-
--- NEW FLY LOGIC (BodyVelocity/BodyGyro version)
-local flyConnection = nil
-local bodyVelocity = nil
-local bodyGyro = nil
-
-local function flyStep()
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") and flyOn then
-        local root = character.HumanoidRootPart
-        if not bodyVelocity then
-            bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.Parent = root
-        end
-        if not bodyGyro then
-            bodyGyro = Instance.new("BodyGyro")
-            bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-            bodyGyro.CFrame = workspace.CurrentCamera.CFrame
-            bodyGyro.Parent = root
-        end
-        local moveVec = Vector3.new()
-        if UIS:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector end
-        if UIS:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector end
-        if UIS:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector end
-        if UIS:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector end
-        if UIS:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
-        if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec = moveVec - Vector3.new(0, 1, 0) end
-        if moveVec.Magnitude > 0 then
-            bodyVelocity.Velocity = moveVec.Unit * (flySpeed * 10)
-        else
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        end
-        bodyGyro.CFrame = workspace.CurrentCamera.CFrame
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-            humanoid.PlatformStand = true
-        end
-    elseif character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.PlatformStand = false
+    flyToggleBtn.Text = "Fly: " .. (flyOn and "ON" or "OFF")
+    flyToggleBtn.BackgroundColor3 = flyOn and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(120, 0, 180)
+    flySpeedLabel.Text = "Speed: " .. tostring(flySpeed)
+    local flyModButton = modsScroll:FindFirstChild("FlyButton")
+    if flyModButton then
+        flyModButton.Text = "Fly" .. (flyOn and " [ON]" or " [OFF]")
+        flyModButton.BackgroundColor3 = flyOn and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(140, 0, 200)
+        activeMods["Fly"] = flyOn
     end
 end
 
-local function enableFly()
-    flyGui.Enabled = true
-    flyOn = true
-    updateFlyGui()
-    if flyConnection then
-        flyConnection:Disconnect()
-    end
-    flyConnection = RunService.RenderStepped:Connect(flyStep)
+local function updateModsDisplay()
+    -- Forward declaration to allow updateModsDisplay to be called in resetCharacter
+    -- (The full body of this function is later in the script)
 end
 
-local function disableFly()
-    flyOn = false
-    updateFlyGui()
-    if flyConnection then
-        flyConnection:Disconnect()
-        flyConnection = nil
-    end
-    local character = player.Character
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.PlatformStand = false
-    end
+local function resetCharacter()
+    print("Resetting character to restore movement...")
+    
+    -- Clean up physics objects
     if bodyVelocity then
         bodyVelocity:Destroy()
         bodyVelocity = nil
@@ -789,93 +729,185 @@ local function disableFly()
         bodyGyro:Destroy()
         bodyGyro = nil
     end
+
+    -- Toggle off fly state variables
+    flyOn = false
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+    flyGui.Enabled = false
+    updateFlyGui()
+    
+    -- The core fix: load character to reset platform stand, ragdoll, and movement
+    player:LoadCharacter() 
+    
+    -- Wait for new character and reset movement values in case of mod conflict
+    player.CharacterAdded:Wait()
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = DEFAULT_WALKSPEED
+        humanoid.JumpPower = DEFAULT_JUMPPOWER
+        humanoid.PlatformStand = false
+        activeMods["Player Speed"] = false
+        activeMods["Super Jump"] = false
+    end
+    updateModsDisplay() -- Update menu to reflect reset
 end
+
+local function flyStep()
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") and flyOn then
+        local root = character.HumanoidRootPart
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        
+        -- Set Humanoid properties for fly/ragdoll
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics) -- Enables Physics state (like ragdoll)
+        humanoid.PlatformStand = true
+        
+        if not bodyVelocity then
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            bodyVelocity.Parent = root
+        end
+        if not bodyGyro then
+            bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+            bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+            bodyGyro.Parent = root
+        end
+
+        local moveVec = Vector3.new()
+        if UIS:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
+        if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec = moveVec - Vector3.new(0, 1, 0) end
+        
+        if moveVec.Magnitude > 0 then
+            bodyVelocity.Velocity = moveVec.Unit * (flySpeed * 10)
+        else
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        end
+        bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+    end
+end
+
+local function enableFly()
+    if flyOn then return end
+    print("[Fly] Enabling fly and ragdoll...")
+    -- Ensure the character exists
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    -- Client-side Ragdoll/PlatformStand setup
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+    humanoid.PlatformStand = true
+
+    flyGui.Enabled = true
+    flyOn = true
+    updateFlyGui()
+    if flyConnection then
+        flyConnection:Disconnect()
+    end
+    flyConnection = RunService.RenderStepped:Connect(flyStep)
+end
+
+local function disableFly()
+    if not flyOn then return end
+    print("[Fly] Disabling fly and resetting character...")
+    resetCharacter() -- Calls player:LoadCharacter() which resets state and movement
+end
+
+speedUpBtn.MouseButton1Click:Connect(function()
+    flySpeed = math.min(flySpeed + 1, 10)
+    updateFlyGui()
+end)
+speedDownBtn.MouseButton1Click:Connect(function()
+    flySpeed = math.max(flySpeed - 1, 1)
+    updateFlyGui()
+end)
+flyCloseBtn.MouseButton1Click:Connect(disableFly) -- Close button calls disableFly
 
 flyToggleBtn.MouseButton1Click:Connect(function()
-    flyOn = not flyOn
-    updateFlyGui()
-    if flyOn then
-        enableFly()
-    else
-        disableFly()
-    end
+    if flyOn then
+        disableFly()
+    else
+        enableFly()
+    end
 end)
+updateFlyGui() -- Initial update
 
+
+-- Mod Actions
+modActions["Player Speed"] = function()
+    local enabled = toggleMod("Player Speed")
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = enabled and 50 or DEFAULT_WALKSPEED
+        print("[Movement] Player Speed set to:", humanoid.WalkSpeed)
+    end
+end
 modActions["Fly"] = function()
-    print("[Movement] Fly mod activated!")
-    enableFly()
-end
-
--- Fly GUI stays open even if mod menu is closed
-local closed = false -- Fix: ensure closed variable is initialized
-
-local function openMenu()
-    if not screenGui.Enabled then
-        screenGui.Enabled = true
+    if flyOn then
+        disableFly()
+    else
+        enableFly()
     end
-    closed = false
-    animateMenuOpen()
-    showControlsNotification()
-    setOverlayVisible()
-end
-
-local function closeMenu()
-    screenGui.Enabled = false
-    closed = true
-    mainFrame.Visible = false
-    setOverlayVisible()
-    -- Do NOT disable flyGui here
-end
-
-closeButton.MouseButton1Click:Connect(function()
-    closeMenu()
-end)
-
--- Only open menu with K if closed
-UIS.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.K then
-        if closed then
-            openMenu()
-        end
-    elseif not processed and input.KeyCode == Enum.KeyCode.X then
-        if not closed then
-            closeMenu()
-        end
-    end
-end)
-
--- Allow closing flyGui with F key
-UIS.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.F then
-        flyGui.Enabled = not flyGui.Enabled
-        if not flyGui.Enabled then
-            disableFly() -- Stop flying when GUI is closed with F
-        end
-    end
-end)
-
-modActions["Slippery Ground"] = function()
-    print("[Movement] Slippery Ground mod activated!")
-    -- Placeholder: Add slippery ground logic here
-end
-modActions["Bouncey Ground"] = function()
-    print("[Movement] Bouncey Ground mod activated!")
-    -- Placeholder: Add bouncey ground logic here
 end
 modActions["Super Jump"] = function()
-    print("[Movement] Super Jump mod activated!")
+    local enabled = toggleMod("Super Jump")
     local character = player.Character or player.CharacterAdded:Wait()
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.JumpPower = 150
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.JumpPower = enabled and 150 or DEFAULT_JUMPPOWER
+        print("[Movement] Super Jump set to:", humanoid.JumpPower)
     end
 end
 modActions["No Clip"] = function()
-    print("[Movement] No Clip mod activated!")
-    -- Placeholder: Add no clip logic here
+    local enabled = toggleMod("No Clip")
+    print("[Movement] No Clip mod activated! State:", enabled)
+    -- WARNING: No-Clip usually involves changing CollisionGroups or parts of the character
+    -- which is best done via the server for proper functionality and persistence.
+    -- ModActionRemote:FireServer("NoClipToggle", enabled)
 end
 modActions["Gravity Control"] = function()
-    print("[Movement] Gravity Control mod activated!")
-    -- Placeholder: Add gravity control logic here
+    local enabled = toggleMod("Gravity Control")
+    print("[Movement] Gravity Control mod activated! State:", enabled)
+    -- WARNING: Changing Gravity is a World property and MUST be done on the server.
+    -- ModActionRemote:FireServer("GravityControlToggle", enabled)
+end
+modActions["Slippery Ground"] = function()
+    local enabled = toggleMod("Slippery Ground")
+    print("[Movement] Slippery Ground mod activated! State:", enabled)
+    -- WARNING: Changing Ground properties is a World property and MUST be done on the server.
+    -- ModActionRemote:FireServer("SlipperyGroundToggle", enabled)
+end
+modActions["Bouncey Ground"] = function()
+    local enabled = toggleMod("Bouncey Ground")
+    print("[Movement] Bouncey Ground mod activated! State:", enabled)
+    -- WARNING: Changing Ground properties is a World property and MUST be done on the server.
+    -- ModActionRemote:FireServer("BounceyGroundToggle", enabled)
+end
+
+-- Other Mod Actions
+modActions["Full User Reports"] = function()
+    print("[ModMenu700] Full User Reports activated! (Feature: Show all user reports)")
+    ModActionRemote:FireServer("FullUserReports", player.UserId)
+end
+modActions["Anti Time Out"] = function()
+    print("[ModMenu700] Anti Time Out activated! (Feature: Prevent timeouts)")
+    ModActionRemote:FireServer("AntiTimeOut")
+end
+modActions["Anti Kick"] = function()
+    print("[ModMenu700] Anti Kick activated! (Feature: Prevent kicks)")
+    ModActionRemote:FireServer("AntiKick")
 end
 
 -- Selected category
@@ -884,275 +916,227 @@ local selectedCategory = nil
 -- Tab buttons for categories
 local categoryButtons = {}
 
+-- Function to handle menu animation (as implied by your code)
+local function animateMenuOpen()
+    mainFrame.Visible = true
+    local goal = {BackgroundTransparency = 0.35, Size = UDim2.new(0, 520, 0, 340)}
+    local info = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    TweenService:Create(mainFrame, info, goal):Play()
+end
+
+local function showControlsNotification()
+    controlsFrame.Position = UDim2.new(0.5, -170, 0, -130)
+    controlsFrame.Visible = true
+    local goal = {Position = UDim2.new(0.5, -170, 0, 10)}
+    local info = TweenInfo.new(0.5, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(controlsFrame, info, goal)
+    tween:Play()
+    tween.Completed:Wait()
+    task.wait(4) -- Display for 4 seconds
+    local hideGoal = {Position = UDim2.new(0.5, -170, 0, -130)}
+    local hideInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    TweenService:Create(controlsFrame, hideInfo, hideGoal):Play()
+end
+
+-- Function to update mod list display (now fully defined)
+function updateModsDisplay()
+    for _, child in modsScroll:GetChildren() do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    if selectedCategory == "Overview / Analytics" then
+        modsScroll.Visible = false
+        infoPanel.Visible = false
+        reportsPanel.Visible = false
+        analyticsPanel.Visible = true
+        return
+    elseif selectedCategory == "User Reports" then
+        modsScroll.Visible = false
+        infoPanel.Visible = false
+        analyticsPanel.Visible = false
+        reportsPanel.Visible = true
+        updateLeaderboard()
+        return
+    else
+        modsScroll.Visible = true
+        infoPanel.Visible = false
+        reportsPanel.Visible = false
+        analyticsPanel.Visible = false
+    end
+
+    local modNames = categories[selectedCategory] or {}
+    for i, modName in modNames do
+        local button = Instance.new("TextButton")
+        button.Name = modName .. "Button"
+        button.Size = UDim2.new(1, 0, 0, 32)
+        button.BackgroundColor3 = activeMods[modName] and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(140, 0, 200)
+        button.BackgroundTransparency = 0.35
+        button.BorderSizePixel = 0
+        button.Text = modName .. (activeMods[modName] and " [ON]" or activeMods[modName] == false and " [OFF]" or "")
+        button.Font = Enum.Font.Gotham
+        button.TextSize = 14
+        button.TextColor3 = Color3.fromRGB(230, 200, 255)
+        button.TextXAlignment = Enum.TextXAlignment.Left
+        button.TextScaled = true
+        button.LayoutOrder = i
+        button.Parent = modsScroll
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 6)
+        corner.Parent = button
+
+        button.MouseButton1Click:Connect(function()
+            local action = modActions[modName]
+            if action then
+                action()
+                if activeMods[modName] ~= nil then -- Only update button if it's a togglable mod handled by toggleMod
+                    button.Text = modName .. (activeMods[modName] and " [ON]" or " [OFF]")
+                    button.BackgroundColor3 = activeMods[modName] and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(140, 0, 200)
+                end
+            end
+        end)
+        
+        -- Hover for info
+        button.MouseEnter:Connect(function()
+            if UIS:IsKeyDown(Enum.KeyCode.L) then
+                local desc = modDescriptions[modName] or "No description available."
+                infoPanel.Visible = true
+                infoTitle.Text = modName
+                infoDesc.Text = desc
+            end
+        end)
+        button.MouseLeave:Connect(function()
+            infoPanel.Visible = false
+        end)
+    end
+    modsScroll.CanvasSize = UDim2.new(0, 0, 0, modsListLayout.AbsoluteContentSize.Y + 10)
+end
+
+
 local function createCategoryButton(catName, layoutOrder)
     local button = Instance.new("TextButton")
-    button.Name = catName .. "Button"
+    button.Name = catName .. "CategoryButton"
     button.Size = UDim2.new(1, -10, 0, 36)
+    button.Position = UDim2.new(0, 5, 0, 5)
     button.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-    button.BackgroundTransparency = 0.45
+    button.BackgroundTransparency = 0.3
     button.BorderSizePixel = 0
     button.Text = catName
     button.Font = Enum.Font.GothamBold
-    button.TextSize = 15
-    button.TextColor3 = Color3.fromRGB(230, 200, 255)
+    button.TextSize = 16
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.LayoutOrder = layoutOrder
     button.Parent = categoriesPanel
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = button
-
-    button.MouseEnter:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
-        button.BackgroundTransparency = 0.15
-    end)
-    button.MouseLeave:Connect(function()
-        if selectedCategory ~= catName then
-            button.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-            button.BackgroundTransparency = 0.45
-        end
-    end)
-
-    button.MouseButton1Click:Connect(function()
-        selectedCategory = catName
-        for name, btn in categoryButtons do
-            btn.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-            btn.BackgroundTransparency = 0.45
-        end
-        button.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
-        button.BackgroundTransparency = 0.15
-        updateModsList()
-    end)
-
+    
     categoryButtons[catName] = button
     return button
 end
 
--- Mod info popup GUI (right corner)
-local modInfoGui = Instance.new("Frame")
-modInfoGui.Name = "ModInfoGui"
-modInfoGui.Size = UDim2.new(0, 220, 0, 120)
-modInfoGui.Position = UDim2.new(1, -230, 1, -130)
-modInfoGui.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
-modInfoGui.BackgroundTransparency = 0.5
-modInfoGui.BorderSizePixel = 0
-modInfoGui.Visible = false
-modInfoGui.Parent = screenGui
-
-local modInfoCorner = Instance.new("UICorner")
-modInfoCorner.CornerRadius = UDim.new(0, 10)
-modInfoCorner.Parent = modInfoGui
-
-local modInfoTitle = Instance.new("TextLabel")
-modInfoTitle.Name = "ModInfoTitle"
-modInfoTitle.Size = UDim2.new(1, -16, 0, 32)
-modInfoTitle.Position = UDim2.new(0, 8, 0, 8)
-modInfoTitle.BackgroundTransparency = 1
-modInfoTitle.Text = ""
-modInfoTitle.Font = Enum.Font.GothamBold
-modInfoTitle.TextSize = 16
-modInfoTitle.TextColor3 = Color3.fromRGB(230, 200, 255)
-modInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
-modInfoTitle.Parent = modInfoGui
-
-local modInfoDesc = Instance.new("TextLabel")
-modInfoDesc.Name = "ModInfoDesc"
-modInfoDesc.Size = UDim2.new(1, -16, 0, 70)
-modInfoDesc.Position = UDim2.new(0, 8, 0, 44)
-modInfoDesc.BackgroundTransparency = 1
-modInfoDesc.Text = ""
-modInfoDesc.Font = Enum.Font.Gotham
-modInfoDesc.TextSize = 13
-modInfoDesc.TextColor3 = Color3.fromRGB(230, 200, 255)
-modInfoDesc.TextXAlignment = Enum.TextXAlignment.Left
-modInfoDesc.TextYAlignment = Enum.TextYAlignment.Top
-modInfoDesc.TextWrapped = true
-modInfoDesc.Parent = modInfoGui
-
--- Mods list logic
-local hoveredModButton = nil
-local modButtons = {}
-local analyticsModButtons = {}
-
-local function createModButton(modName, layoutOrder, parentFrame)
-    local button = Instance.new("TextButton")
-    button.Name = modName .. "Button"
-    button.Size = UDim2.new(1, 0, 0, 28)
-    button.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-    button.BackgroundTransparency = 0.45
-    button.BorderSizePixel = 0
-    button.Text = modName
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 13
-    button.TextColor3 = Color3.fromRGB(230, 200, 255)
-    button.LayoutOrder = layoutOrder
-    button.Parent = parentFrame
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = button
-
-    button.MouseEnter:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
-        button.BackgroundTransparency = 0.15
-        hoveredModButton = button
-    end)
-    button.MouseLeave:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-        button.BackgroundTransparency = 0.45
-        if hoveredModButton == button then
-            hoveredModButton = nil
+local function selectCategory(catName)
+    if selectedCategory then
+        local prevButton = categoryButtons[selectedCategory]
+        if prevButton then
+            prevButton.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
+            prevButton.BackgroundTransparency = 0.3
         end
-    end)
+    end
 
+    selectedCategory = catName
+    local newButton = categoryButtons[catName]
+    if newButton then
+        newButton.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
+        newButton.BackgroundTransparency = 0.1
+    end
+    updateModsDisplay()
+end
+
+-- Initialize Categories
+local order = 1
+for catName in categories do
+    local button = createCategoryButton(catName, order)
     button.MouseButton1Click:Connect(function()
-        if modActions[modName] then
-            modActions[modName]()
-        else
-			print("[👿nightmare client v1👿] Activated mod:", modName)
-        end
+        selectCategory(catName)
     end)
-
-    if parentFrame == modsScroll then
-        modButtons[modName] = button
-    else
-        analyticsModButtons[modName] = button
-    end
-    return button
+    order = order + 1
 end
 
-function updateModsList()
-    -- Hide all panels first
-    modsScroll.Visible = false
-    infoPanel.Visible = false
-    analyticsPanel.Visible = false
-    reportsPanel.Visible = false
-    cameraViewFrame.Visible = false
-    analyticsModsFrame.Visible = false
+-- Initial selection
+selectCategory("Movement")
 
-    if selectedCategory == "Info" then
-        infoPanel.Visible = true
-    elseif selectedCategory == "Overview / Analytics" then
-        analyticsPanel.Visible = true
-        analyticsModsFrame.Visible = true
-        -- Remove old mod buttons from analyticsModsFrame
-        for _, child in analyticsModsFrame:GetChildren() do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        local mods = categories[selectedCategory]
-        if mods and #mods > 0 then
-            for i = 1, #mods do
-                createModButton(mods[i], i, analyticsModsFrame)
-            end
-        end
-    elseif selectedCategory == "User Reports" then
-        reportsPanel.Visible = true
-        updateLeaderboard()
-        -- Show mods for User Reports (now empty)
-        for _, child in modsScroll:GetChildren() do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        local mods = categories[selectedCategory]
-        if mods and #mods > 0 then
-            modsScroll.Visible = true
-            for i = 1, #mods do
-                createModButton(mods[i], i, modsScroll)
-            end
-            modsScroll.CanvasSize = UDim2.new(0, 0, 0, modsListLayout.AbsoluteContentSize.Y + 10)
-        end
-    elseif selectedCategory and categories[selectedCategory] then
-        modsScroll.Visible = true
-        for _, child in modsScroll:GetChildren() do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        local mods = categories[selectedCategory]
-        for i = 1, #mods do
-            createModButton(mods[i], i, modsScroll)
-        end
-        modsScroll.CanvasSize = UDim2.new(0, 0, 0, modsListLayout.AbsoluteContentSize.Y + 10)
-    end
+local closed = true
+
+local function openMenu()
+    if not screenGui.Enabled then
+        screenGui.Enabled = true
+    end
+    closed = false
+    animateMenuOpen()
+    showControlsNotification()
+    setOverlayVisible()
+    updateModsDisplay() -- Refresh mods when opening
 end
 
--- Create category buttons (three main categories, plus Info/Analytics/Reports)
-local catNames = {"Info", "Movement", "Visual", "OP", "Overview / Analytics", "User Reports"}
-for i = 1, #catNames do
-    createCategoryButton(catNames[i], i)
-end
-
--- Select Info tab by default
-selectedCategory = "Info"
-categoryButtons[selectedCategory].BackgroundColor3 = Color3.fromRGB(180, 0, 255)
-categoryButtons[selectedCategory].BackgroundTransparency = 0.15
-updateModsList()
-
--- Animation logic for menu open (slower)
-function animateMenuOpen()
-    mainFrame.Visible = true
-    mainFrame.BackgroundTransparency = 1
-    mainFrame.Size = UDim2.new(0, 416, 0, 272)
-    local tweenInfo = TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out) -- Slower animation
-    local tween = TweenService:Create(mainFrame, tweenInfo, {
-        BackgroundTransparency = 0.35,
-        Size = UDim2.new(0, 520, 0, 340)
-    })
-    tween:Play()
-end
-
--- Controls notification logic
-function showControlsNotification()
-    controlsFrame.Visible = true
-    controlsFrame.BackgroundTransparency = 1
-    local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(controlsFrame, tweenInfo, {
-        BackgroundTransparency = 0.35
-    })
-    tween:Play()
-    task.spawn(function()
-        task.wait(10)
-        local tweenOut = TweenService:Create(controlsFrame, TweenInfo.new(0.4), {
-            BackgroundTransparency = 1
-        })
-        tweenOut:Play()
-        tweenOut.Completed:Wait()
-        controlsFrame.Visible = false
+local function closeMenu()
+    if flyOn then return end -- Prevent closing menu if fly is active, to force use of X or F for fly
+    closed = true
+    local goal = {BackgroundTransparency = 1, Size = UDim2.new(0, 416, 0, 272)} -- Animate out
+    local info = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    local tween = TweenService:Create(mainFrame, info, goal)
+    tween.Completed:Connect(function()
+        mainFrame.Visible = false
+        screenGui.Enabled = false
     end)
+    tween:Play()
+    setOverlayVisible()
+    -- Do NOT disable flyGui here
 end
 
--- Hide mod info popup when clicking anywhere else or pressing L again
+closeButton.MouseButton1Click:Connect(function()
+    closeMenu()
+end)
+
+-- Only open menu with K if closed
 UIS.InputBegan:Connect(function(input, processed)
-    if not processed and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        if modInfoGui.Visible then
-            modInfoGui.Visible = false
-        end
-    end
-    if not processed and input.KeyCode == Enum.KeyCode.L then
-        if modInfoGui.Visible and not hoveredModButton then
-            modInfoGui.Visible = false
-        end
-    end
+    if not processed and input.KeyCode == Enum.KeyCode.K then
+        if closed then
+            openMenu()
+        end
+    elseif not processed and input.KeyCode == Enum.KeyCode.X then
+        if not closed then
+            closeMenu()
+        end
+    end
 end)
 
--- Show mod info popup when hovering and pressing L
+-- Allow toggling flyGui/fly state with F key
 UIS.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.L then
-        if hoveredModButton then
-            local modName = hoveredModButton.Text
-            modInfoTitle.Text = modName
-            modInfoDesc.Text = modDescriptions[modName] or "No info available."
-            modInfoGui.Visible = true
+    if not processed and input.KeyCode == Enum.KeyCode.F then
+        if flyOn then
+            disableFly() -- Disables fly and resets character (ragdoll off, walk on)
+        else
+            -- If not flying, simply toggle the control GUI visibility
+            flyGui.Enabled = not flyGui.Enabled 
+        end
+    end
+end)
+
+-- Handle Character Respawn to clear fly physics
+player.CharacterAdded:Connect(function(character)
+    -- This handles the case if the player dies while flying or if the resetCharacter
+    -- function called :LoadCharacter(). It ensures the state variables are clean.
+    if flyOn then
+        flyOn = false
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
         end
+        flyGui.Enabled = false
+        updateFlyGui()
     end
 end)
-
--- Initial menu open (on game start)
-task.spawn(function()
-    openMenu()
-end)
-
-print("[👿nightmare client v1👿] Mod menu loaded with Movement mods: Player Speed, Fly, Slippery Ground, Bouncey Ground, Super Jump, No Clip, Gravity Control, and Overview / Analytics mods added. Fly mod now uses BodyVelocity/BodyGyro for flying and opens persistent controls GUI.")
